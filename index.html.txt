@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber City Drive</title>
+    
+    <!-- Настройки для iPhone -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/564/564619.png">
+    <link rel="manifest" href="manifest.json">
+
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 100; display: flex; gap: 10px; }
+        button { padding: 10px; background: #ff00ff; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <button id="toggleMode">UFO MODE</button>
+    <button id="teleportBtn">TELEPORT</button>
+</div>
+
+<!-- Подключаем библиотеку Three.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+    // Регистрация PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+    }
+
+    // ОСНОВНАЯ ЛОГИКА ИГРЫ
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Свет
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
+    scene.add(ambientLight);
+    const sun = new THREE.DirectionalLight(0xffffff, 1);
+    sun.position.set(10, 20, 10);
+    scene.add(sun);
+
+    // Логика дня и ночи (каждые 10 секунд)
+    setInterval(() => {
+        const isNight = sun.intensity > 0.5;
+        sun.intensity = isNight ? 0.1 : 1.2;
+        scene.background = new THREE.Color(isNight ? 0x000005 : 0x87ceeb);
+        ambientLight.intensity = isNight ? 0.5 : 2;
+    }, 10000);
+
+    // Создаем "город" (упрощенно для примера)
+    for(let i = 0; i < 50; i++) {
+        const h = Math.random() * 10 + 2;
+        const geo = new THREE.BoxGeometry(2, h, 2);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x111111, emissive: 0x330033 });
+        const b = new THREE.Mesh(geo, mat);
+        b.position.set(Math.random() * 40 - 20, h/2, Math.random() * 40 - 20);
+        scene.add(b);
+    }
+
+    camera.position.set(0, 5, 10);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>
