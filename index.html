@@ -621,6 +621,82 @@ function sync3DLighting(s) {
 
 animate();
 window.addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+// === СИСТЕМА СЮЖЕТА (БЕЗОПАСНАЯ ВСТАВКА) ===
+
+// 1. Создаем элементы интерфейса
+const storyDiv = document.createElement('div');
+storyDiv.id = 'story-box';
+document.body.appendChild(storyDiv);
+
+const storyStyle = document.createElement('style');
+storyStyle.innerHTML = `
+    #story-box {
+        position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
+        width: 85%; max-width: 600px; background: rgba(0, 0, 0, 0.85);
+        color: #00ffcc; padding: 20px; border: 2px solid #00ffcc;
+        font-size: 16px; font-family: "Courier New", monospace;
+        z-index: 10000; display: none; box-shadow: 0 0 15px #00ffcc;
+        text-align: center; pointer-events: none;
+    }
+`;
+document.head.appendChild(storyStyle);
+
+let secondEncountered = false;
+let pixelHands;
+
+function say(text, duration = 5000) {
+    storyDiv.innerText = text;
+    storyDiv.style.display = 'block';
+    setTimeout(() => { if(storyDiv.innerText === text) storyDiv.style.display = 'none'; }, duration);
+}
+
+// 2. Создаем руки и привязываем к твоей камере
+function createPixelHands() {
+    pixelHands = new THREE.Group();
+    const cubeGeo = new THREE.BoxGeometry(0.02, 0.02, 0.02);
+    const cubeMat = new THREE.MeshBasicMaterial({color: 0x00ffcc, transparent: true, opacity: 0.5});
+    for(let i=0; i<60; i++) {
+        const cL = new THREE.Mesh(cubeGeo, cubeMat);
+        cL.position.set(Math.random()*0.4 - 0.6, Math.random()*0.5 - 0.4, -0.5);
+        pixelHands.add(cL);
+        const cR = new THREE.Mesh(cubeGeo, cubeMat);
+        cR.position.set(Math.random()*0.4 + 0.2, Math.random()*0.5 - 0.4, -0.5);
+        pixelHands.add(cR);
+    }
+    camera.add(pixelHands);
+}
+
+// 3. Интеграция в твои функции (используем имена из твоего кода на скринах)
+// Мы не заменяем функции, а добавляем к ним фразы
+const originalTeleport = teleportHuman; 
+teleportHuman = function() {
+    originalTeleport(); // Сначала выполняем твой полет
+    if(!secondEncountered) {
+        setTimeout(() => {
+            say("???: Слишком поздно пытаться улететь. Ты часть этой системы.", 6000);
+            secondEncountered = true;
+        }, 3000);
+    }
+};
+
+// 4. Запуск начальной сцены
+createPixelHands();
+setTimeout(() => say("Где я?.. Мои руки... они выглядят как пиксели. Что произошло?", 6000), 1500);
+setTimeout(() => { 
+    if(pixelHands) pixelHands.visible = false; 
+    say("Нужно осмотреться. В этом цифровом шуме должен быть кто-то еще.", 5000);
+}, 8500);
+
+// 5. Добавляем покачивание рук в твой animate
+const oldAnimate = animate;
+animate = function() {
+    if(pixelHands && pixelHands.visible) {
+        pixelHands.children.forEach(c => {
+            c.position.y += Math.sin(Date.now() * 0.005 + c.position.x * 10) * 0.0008;
+        });
+    }
+    oldAnimate();
+};
 </script>
 </body>
 </html>
